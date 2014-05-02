@@ -48,17 +48,18 @@ func newMessage(from, subject, body, contenttype string) *Message {
 	return &m
 }
 
-// NewMessage creates
+// NewMessage creates a new text/plain email.
 func NewMessage(from, subject, body string) *Message {
 	return newMessage(from, subject, body, "text/plain")
 }
 
+// NewHTMLMessage creates a new text/html email.
 func NewHTMLMessage(from, subject, body string) *Message {
 	return newMessage(from, subject, body, "text/html")
 }
 
-func (m *Message) AddAttachment(description string, attachment []byte) {
-	m.attachments[description] = attachment
+func (m *Message) AddAttachment(filename string, attachment []byte) {
+	m.attachments[filename] = attachment
 }
 
 func (m *Message) AddAttachmentFromFile(filename string) error {
@@ -78,10 +79,12 @@ func (m *Message) AddBCC(emailAddr string) {
 	m.bcc = append(m.bcc, emailAddr)
 }
 
+// AddTo adds an email address to the To recipients
 func (m *Message) AddTo(emailAddr string) {
 	m.to = append(m.to, emailAddr)
 }
 
+// Body returns the formatted message body.
 func (m *Message) Body() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("From: " + m.from + "\n")
@@ -121,10 +124,13 @@ func (m *Message) Body() []byte {
 	return buf.Bytes()
 }
 
+// From returns the sender's email address
 func (m *Message) From() string {
 	return m.from
 }
 
+// Recipients returns an array of all the recipients, which includes
+// To, CC, and BCC
 func (m *Message) Recipients() []string {
 	rcpts := make([]string, 0, len(m.to)+len(m.cc)+len(m.bcc))
 	rcpts = append(rcpts, m.to...)
@@ -133,6 +139,7 @@ func (m *Message) Recipients() []string {
 	return rcpts
 }
 
+// NewSMTP is called with smtp[s]://[username:[password]]@server:[port]
 func NewSMTP(rawUrl string) (*SMTP, error) {
 	url, err := url.Parse(rawUrl)
 	if err != nil {
