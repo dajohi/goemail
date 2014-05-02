@@ -33,7 +33,7 @@ type Message struct {
 type SMTP struct {
 	scheme   string
 	server   string
-	auth     *smtp.Auth
+	auth     smtp.Auth
 	hostname string
 }
 
@@ -153,7 +153,7 @@ func NewSMTP(rawUrl string) (*SMTP, error) {
 		hostname: hostname,
 	}
 
-	host, _, err := net.SplitHostPort(url.Host)
+	_, _, err = net.SplitHostPort(url.Host)
 	if err != nil {
 		mysmtp.server = url.Host + ":25"
 	} else {
@@ -162,8 +162,7 @@ func NewSMTP(rawUrl string) (*SMTP, error) {
 
 	if url.User != nil {
 		p, _ := url.User.Password()
-		auth := smtp.PlainAuth("", url.User.Username(), p, host)
-		mysmtp.auth = &auth
+		mysmtp.auth = smtp.CRAMMD5Auth(url.User.Username(), p)
 	}
 	return mysmtp, nil
 }
@@ -200,12 +199,17 @@ func (s *SMTP) Send(msg *Message) error {
 		return err
 	}
 
-	fmt.Printf("%v\n", s.auth != nil)
+	// Check if STARTTLS is supported.
+	tlscfg := tls.Config{
+		InsecureSkipVerify: true,
+	}
+	if err = client.StartTLS(&tlscfg); err != nil {
+		return err
+	}
+
 	// Send authentication, if specified
-	if s.auth != nil {
-		if err = client.Auth(*s.auth); err != nil {
-			return err
-		}
+	if err = client.Auth(s.auth); err != nil {
+		return err
 	}
 
 	// MAIL FROM
