@@ -33,7 +33,7 @@ type Message struct {
 type SMTP struct {
 	scheme   string
 	server   string
-	auth     smtp.Auth
+	auth     *smtp.Auth
 	hostname string
 }
 
@@ -169,7 +169,8 @@ func NewSMTP(rawUrl string) (*SMTP, error) {
 
 	if url.User != nil {
 		p, _ := url.User.Password()
-		mysmtp.auth = smtp.CRAMMD5Auth(url.User.Username(), p)
+		a := smtp.CRAMMD5Auth(url.User.Username(), p)
+		mysmtp.auth = &a
 	}
 	return mysmtp, nil
 }
@@ -217,8 +218,10 @@ func (s *SMTP) Send(msg *Message) error {
 	}
 
 	// Send authentication, if specified
-	if err = client.Auth(s.auth); err != nil {
-		return err
+	if s.auth != nil {
+		if err = client.Auth(*s.auth); err != nil {
+			return err
+		}
 	}
 
 	// MAIL FROM
