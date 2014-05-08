@@ -209,11 +209,14 @@ func (s *SMTP) Send(msg *Message) error {
 
 	// Check if STARTTLS is supported if not smtps.
 	if s.scheme != "smtps" {
-		tlscfg := tls.Config{
-			InsecureSkipVerify: true,
-		}
-		if err = client.StartTLS(&tlscfg); err != nil {
-			return err
+		hasStartTLS, _ := client.Extension("STARTTLS")
+		if hasStartTLS {
+			tlscfg := tls.Config{
+				InsecureSkipVerify: true,
+			}
+			if err = client.StartTLS(&tlscfg); err != nil {
+				return err
+			}
 		}
 	}
 
