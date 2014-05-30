@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -24,6 +25,7 @@ type Message struct {
 	to              []string
 	cc              []string
 	bcc             []string
+	date            string
 	subject         string
 	body            string
 	bodyContentType string
@@ -37,10 +39,11 @@ type SMTP struct {
 	hostname string
 }
 
-func newMessage(from, subject, body, contenttype string) *Message {
+func newMessage(from, subject, date, body, contenttype string) *Message {
 	m := Message{
 		from:            from,
 		subject:         subject,
+		date:            date,
 		body:            body,
 		bodyContentType: contenttype,
 		attachments:     make(map[string][]byte),
@@ -50,12 +53,16 @@ func newMessage(from, subject, body, contenttype string) *Message {
 
 // NewMessage creates a new text/plain email.
 func NewMessage(from, subject, body string) *Message {
-	return newMessage(from, subject, body, "text/plain")
+	t := time.Now()
+	date := t.Format(time.RFC1123Z)
+	return newMessage(from, subject, date, body, "text/plain")
 }
 
 // NewHTMLMessage creates a new text/html email.
 func NewHTMLMessage(from, subject, body string) *Message {
-	return newMessage(from, subject, body, "text/html")
+	t := time.Now()
+	date := t.Format(time.RFC1123Z)
+	return newMessage(from, subject, date, body, "text/html")
 }
 
 func (m *Message) AddAttachment(filename string, attachment []byte) {
@@ -88,6 +95,7 @@ func (m *Message) AddTo(emailAddr string) {
 func (m *Message) Body() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("From: " + m.from + "\n")
+	buf.WriteString("Date: " + m.date + "\n")
 	buf.WriteString("To: " + strings.Join(m.to, ",") + "\n")
 	if len(m.cc) > 0 {
 		buf.WriteString("Cc: " + strings.Join(m.cc, ",") + "\n")
