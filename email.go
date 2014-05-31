@@ -77,12 +77,12 @@ func (m *Message) AddAttachmentFromFile(filename string) error {
 	return nil
 }
 
-// AddCC addes a single email address to the cc list.
+// AddCC adds a single email address to the cc list.
 func (m *Message) AddCC(emailAddr string) {
 	m.cc = append(m.cc, emailAddr)
 }
 
-// AddBCC addes a single email address to the bcc list.
+// AddBCC adds a single email address to the bcc list.
 func (m *Message) AddBCC(emailAddr string) {
 	m.bcc = append(m.bcc, emailAddr)
 }
