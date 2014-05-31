@@ -39,11 +39,11 @@ type SMTP struct {
 	hostname string
 }
 
-func newMessage(from, subject, date, body, contenttype string) *Message {
+func newMessage(from, subject, body, contenttype string) *Message {
 	m := Message{
 		from:            from,
 		subject:         subject,
-		date:            date,
+		date:            time.Now().Format(time.RFC1123Z),
 		body:            body,
 		bodyContentType: contenttype,
 		attachments:     make(map[string][]byte),
@@ -53,16 +53,12 @@ func newMessage(from, subject, date, body, contenttype string) *Message {
 
 // NewMessage creates a new text/plain email.
 func NewMessage(from, subject, body string) *Message {
-	t := time.Now()
-	date := t.Format(time.RFC1123Z)
-	return newMessage(from, subject, date, body, "text/plain")
+	return newMessage(from, subject, body, "text/plain")
 }
 
 // NewHTMLMessage creates a new text/html email.
 func NewHTMLMessage(from, subject, body string) *Message {
-	t := time.Now()
-	date := t.Format(time.RFC1123Z)
-	return newMessage(from, subject, date, body, "text/html")
+	return newMessage(from, subject, body, "text/html")
 }
 
 func (m *Message) AddAttachment(filename string, attachment []byte) {
