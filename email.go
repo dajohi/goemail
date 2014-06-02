@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -24,6 +25,7 @@ type Message struct {
 	to              []string
 	cc              []string
 	bcc             []string
+	date            string
 	subject         string
 	body            string
 	bodyContentType string
@@ -41,6 +43,7 @@ func newMessage(from, subject, body, contenttype string) *Message {
 	m := Message{
 		from:            from,
 		subject:         subject,
+		date:            time.Now().Format(time.RFC1123Z),
 		body:            body,
 		bodyContentType: contenttype,
 		attachments:     make(map[string][]byte),
@@ -88,6 +91,7 @@ func (m *Message) AddTo(emailAddr string) {
 func (m *Message) Body() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("From: " + m.from + "\n")
+	buf.WriteString("Date: " + m.date + "\n")
 	buf.WriteString("To: " + strings.Join(m.to, ",") + "\n")
 	if len(m.cc) > 0 {
 		buf.WriteString("Cc: " + strings.Join(m.cc, ",") + "\n")
