@@ -15,11 +15,13 @@ import (
 	"time"
 )
 
+// Define errors
 var (
 	ErrInvalidScheme = errors.New("invalid scheme")
 	ErrNoRecipients  = errors.New("no recipients specified")
 )
 
+// Message defines an email message, headers, and attachments.
 type Message struct {
 	from            string
 	to              []string
@@ -32,6 +34,7 @@ type Message struct {
 	attachments     map[string][]byte
 }
 
+// SMTP defines and smtp server along with the auth info.
 type SMTP struct {
 	scheme   string
 	server   string
@@ -61,10 +64,13 @@ func NewHTMLMessage(from, subject, body string) *Message {
 	return newMessage(from, subject, body, "text/html")
 }
 
+// AddAttachment adds the provided attachment to the message.
 func (m *Message) AddAttachment(filename string, attachment []byte) {
 	m.attachments[filename] = attachment
 }
 
+// AddAttachmentFromFile adds an attachment specified by filename to the
+// message.
 func (m *Message) AddAttachmentFromFile(filename string) error {
 	a, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -74,10 +80,12 @@ func (m *Message) AddAttachmentFromFile(filename string) error {
 	return nil
 }
 
+// AddCC adds a single email address to the cc list.
 func (m *Message) AddCC(emailAddr string) {
 	m.cc = append(m.cc, emailAddr)
 }
 
+// AddBCC adds a single email address to the bcc list.
 func (m *Message) AddBCC(emailAddr string) {
 	m.bcc = append(m.bcc, emailAddr)
 }
@@ -144,8 +152,8 @@ func (m *Message) Recipients() []string {
 }
 
 // NewSMTP is called with smtp[s]://[username:[password]]@server:[port]
-func NewSMTP(rawUrl string) (*SMTP, error) {
-	url, err := url.Parse(rawUrl)
+func NewSMTP(rawURL string) (*SMTP, error) {
+	url, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +187,7 @@ func NewSMTP(rawUrl string) (*SMTP, error) {
 	return mysmtp, nil
 }
 
+// Send connects to the server and sends the email message.
 func (s *SMTP) Send(msg *Message) error {
 	var conn net.Conn
 	var err error
