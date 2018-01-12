@@ -181,7 +181,12 @@ func NewSMTP(rawURL string) (*SMTP, error) {
 
 	if url.User != nil {
 		p, _ := url.User.Password()
-		a := smtp.CRAMMD5Auth(url.User.Username(), p)
+
+		// - put host:port in the fourth argument here as there is a "wrong host name"
+		//   check in go SMTP library auth.go, May have better solution but need
+		//   to understand the purpose of the check
+		a := smtp.PlainAuth("", url.User.Username(), p, mysmtp.server)
+
 		mysmtp.auth = &a
 	}
 	return mysmtp, nil
