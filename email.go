@@ -24,6 +24,7 @@ var (
 // Message defines an email message, headers, and attachments.
 type Message struct {
 	from            string
+	name            string
 	to              []string
 	cc              []string
 	bcc             []string
@@ -80,17 +81,17 @@ func (m *Message) AddAttachmentFromFile(filename string) error {
 	return nil
 }
 
-// AddCC adds a single email address to the cc list.
+// AddCC adds a single email address to the CC list.
 func (m *Message) AddCC(emailAddr string) {
 	m.cc = append(m.cc, emailAddr)
 }
 
-// AddBCC adds a single email address to the bcc list.
+// AddBCC adds a single email address to the BCC list.
 func (m *Message) AddBCC(emailAddr string) {
 	m.bcc = append(m.bcc, emailAddr)
 }
 
-// AddTo adds an email address to the To recipients
+// AddTo adds an email address to the To recipients.
 func (m *Message) AddTo(emailAddr string) {
 	m.to = append(m.to, emailAddr)
 }
@@ -98,7 +99,8 @@ func (m *Message) AddTo(emailAddr string) {
 // Body returns the formatted message body.
 func (m *Message) Body() []byte {
 	buf := bytes.NewBuffer(nil)
-	buf.WriteString("From: " + m.from + "\n")
+	from := fmt.Sprintf("\"%s\" <%s>", m.name, m.from)
+	buf.WriteString("From: " + from + "\n")
 	buf.WriteString("Date: " + m.date + "\n")
 	buf.WriteString("To: " + strings.Join(m.to, ",") + "\n")
 	if len(m.cc) > 0 {
@@ -139,6 +141,16 @@ func (m *Message) Body() []byte {
 // From returns the sender's email address
 func (m *Message) From() string {
 	return m.from
+}
+
+// Name returns the sender's display name.
+func (m *Message) Name() string {
+	return m.name
+}
+
+// SetName sets the sender's display name.
+func (m *Message) SetName(name string) {
+	m.name = name
 }
 
 // Recipients returns an array of all the recipients, which includes
@@ -262,12 +274,13 @@ func (s *SMTP) Send(msg *Message) error {
 	if err != nil {
 		return err
 	}
-	dataBuf.Write(msg.Body())
-	dataBuf.Close()
 
-	if err = client.Quit(); err != nil {
+	_, err = dataBuf.Write(msg.Body())
+	if err != nil {
 		return err
 	}
 
-	return nil
+	_ = dataBuf.Close()
+
+	return client.Quit()
 }
