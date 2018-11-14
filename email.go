@@ -175,7 +175,7 @@ func NewSMTP(rawURL string, tlsConfig tls.Config) (*SMTP, error) {
 		return nil, err
 	}
 
-	if url.Scheme != "smtp" && url.Scheme != "smtps" {
+	if url.Scheme != "smtp" && url.Scheme != "smtps" && url.Scheme != "tls" {
 		return nil, ErrInvalidScheme
 	}
 
@@ -214,26 +214,33 @@ func NewSMTP(rawURL string, tlsConfig tls.Config) (*SMTP, error) {
 func (s *SMTP) Send(msg *Message) error {
 	var conn net.Conn
 	var err error
+	var success bool
 
 	recipients := msg.Recipients()
 	if len(recipients) < 1 {
 		return ErrNoRecipients
 	}
 
-	if s.scheme == "smtps" {
-		if conn, err = tls.Dial("tcp", s.server, s.tlsConfig); err != nil {
-			return err
-		}
-	} else {
-		if conn, err = net.Dial("tcp", s.server); err != nil {
-			return err
-		}
+	switch s.scheme {
+	case "smtps":
+		conn, err = tls.Dial("tcp", s.server, s.tlsConfig)
+	case "tls":
+	default:
+		conn, err = net.Dial("tcp", s.server)
+	}
+	if err != nil {
+		return err
 	}
 
 	client, err := smtp.NewClient(conn, s.server)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if !success {
+			client.Quit()
+		}
+	}()
 
 	// Send HELO/EHLO
 	if err = client.Hello(s.hostname); err != nil {
@@ -243,11 +250,11 @@ func (s *SMTP) Send(msg *Message) error {
 	// Check if STARTTLS is supported if not smtps.
 	if s.scheme != "smtps" {
 		hasStartTLS, _ := client.Extension("STARTTLS")
+		if !hasStartTLS && s.scheme == "tls" {
+			return fmt.Errorf("server does not support TLS")
+		}
 		if hasStartTLS {
-			tlscfg := tls.Config{
-				InsecureSkipVerify: true,
-			}
-			if err = client.StartTLS(&tlscfg); err != nil {
+			if err = client.StartTLS(s.tlsConfig); err != nil {
 				return err
 			}
 		}
@@ -277,13 +284,18 @@ func (s *SMTP) Send(msg *Message) error {
 	if err != nil {
 		return err
 	}
+	defer dataBuf.Close()
 
 	_, err = dataBuf.Write(msg.Body())
 	if err != nil {
 		return err
 	}
 
-	_ = dataBuf.Close()
+	err = client.Quit()
+	if err != nil {
+		return err
+	}
 
-	return client.Quit()
+	success = true
+	return nil
 }
