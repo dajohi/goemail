@@ -41,10 +41,11 @@ type Message struct {
 
 // SMTP defines and smtp server along with the auth info.
 type SMTP struct {
-	scheme   string
-	server   string
-	auth     *smtp.Auth
-	hostname string
+	scheme    string
+	server    string
+	auth      *smtp.Auth
+	hostname  string
+	tlsConfig *tls.Config
 }
 
 func newMessage(from, subject, body, contenttype string) *Message {
@@ -168,7 +169,7 @@ func (m *Message) Recipients() []string {
 }
 
 // NewSMTP is called with smtp[s]://[username:[password]]@server:[port]
-func NewSMTP(rawURL string) (*SMTP, error) {
+func NewSMTP(rawURL string, tlsConfig tls.Config) (*SMTP, error) {
 	url, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
@@ -184,8 +185,9 @@ func NewSMTP(rawURL string) (*SMTP, error) {
 	}
 
 	mysmtp := &SMTP{
-		scheme:   url.Scheme,
-		hostname: hostname,
+		scheme:    url.Scheme,
+		hostname:  hostname,
+		tlsConfig: &tlsConfig,
 	}
 
 	_, _, err = net.SplitHostPort(url.Host)
@@ -219,10 +221,7 @@ func (s *SMTP) Send(msg *Message) error {
 	}
 
 	if s.scheme == "smtps" {
-		tlscfg := tls.Config{
-			InsecureSkipVerify: true,
-		}
-		if conn, err = tls.Dial("tcp", s.server, &tlscfg); err != nil {
+		if conn, err = tls.Dial("tcp", s.server, s.tlsConfig); err != nil {
 			return err
 		}
 	} else {
