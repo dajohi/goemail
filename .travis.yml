@@ -1,0 +1,17 @@
+language: go
+go:
+  - 1.11.x
+sudo: false
+install:
+  - go get -v github.com/alecthomas/gometalinter
+  - gometalinter --install
+script:
+  - export GO111MODULE=on
+  - go mod vendor
+  - unset GO111MODULE
+  - gometalinter --vendor --disable-all --deadline=10m \
+      --enable=gofmt \
+      --enable=gosimple \
+      --enable=unconvert \
+      --enable=ineffassign \
+      ./...
