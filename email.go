@@ -169,7 +169,7 @@ func (m *Message) Recipients() []string {
 }
 
 // NewSMTP is called with smtp[s]://[username:[password]]@server:[port]
-func NewSMTP(rawURL string, tlsConfig tls.Config) (*SMTP, error) {
+func NewSMTP(rawURL string, tlsConfig *tls.Config) (*SMTP, error) {
 	url, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
@@ -187,7 +187,7 @@ func NewSMTP(rawURL string, tlsConfig tls.Config) (*SMTP, error) {
 	mysmtp := &SMTP{
 		scheme:    url.Scheme,
 		hostname:  hostname,
-		tlsConfig: &tlsConfig,
+		tlsConfig: tlsConfig,
 	}
 
 	_, _, err = net.SplitHostPort(url.Host)
