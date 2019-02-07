@@ -225,6 +225,7 @@ func (s *SMTP) Send(msg *Message) error {
 	case "smtps":
 		conn, err = tls.Dial("tcp", s.server, s.tlsConfig)
 	case "tls":
+		fallthrough
 	default:
 		conn, err = net.Dial("tcp", s.server)
 	}
@@ -284,9 +285,9 @@ func (s *SMTP) Send(msg *Message) error {
 	if err != nil {
 		return err
 	}
-	defer dataBuf.Close()
 
 	_, err = dataBuf.Write(msg.Body())
+	dataBuf.Close()
 	if err != nil {
 		return err
 	}
