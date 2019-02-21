@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 The Decred developers
+// Copyright (c) 2014-2019 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -122,6 +122,9 @@ func (m *Message) Body() []byte {
 	}
 
 	buf.WriteString(fmt.Sprintf("Content-Type: %s; charset=utf-8\n", m.bodyContentType))
+
+	// Empty line must precede the body.
+	buf.WriteString("\n")
 	buf.WriteString(m.body)
 
 	if len(m.attachments) > 0 {
