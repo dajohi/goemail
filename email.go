@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"net/url"
 	"os"
@@ -60,14 +61,32 @@ func newMessage(from, subject, body, contenttype string) *Message {
 	return &m
 }
 
+// NewMessageType creates a new email with the specified content-type.
+func NewMessageType(from, subject, body, contentType string) *Message {
+	// Allow addresses of the form "Alice <alice@example.com>".
+	fromAddr, err := mail.ParseAddress(from)
+	if err != nil {
+		return nil
+	}
+
+	// Create the message with the parsed from address.
+	m := newMessage(fromAddr.Address, subject, body, contentType)
+
+	// Set the sender's display name.
+	if fromAddr.Name != "" {
+		m.SetName(fromAddr.Name)
+	}
+	return m
+}
+
 // NewMessage creates a new text/plain email.
 func NewMessage(from, subject, body string) *Message {
-	return newMessage(from, subject, body, "text/plain")
+	return NewMessageType(from, subject, body, "text/plain")
 }
 
 // NewHTMLMessage creates a new text/html email.
 func NewHTMLMessage(from, subject, body string) *Message {
-	return newMessage(from, subject, body, "text/html")
+	return NewMessageType(from, subject, body, "text/html")
 }
 
 // AddAttachment adds the provided attachment to the message.
@@ -84,6 +103,13 @@ func (m *Message) AddAttachmentFromFile(filename string) error {
 	}
 	m.attachments[filename] = a
 	return nil
+}
+
+// IsValidAddress validates the input email address, returning false if the
+// address cannot be parsed by mail.ParseAddress.
+func IsValidAddress(addr string) bool {
+	_, err := mail.ParseAddress(addr)
+	return err == nil
 }
 
 // AddCC adds a single email address to the CC list.
