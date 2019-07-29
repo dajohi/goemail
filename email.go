@@ -204,7 +204,16 @@ func NewSMTP(rawURL string, tlsConfig *tls.Config) (*SMTP, error) {
 		return nil, err
 	}
 
-	if url.Scheme != "smtp" && url.Scheme != "smtps" && url.Scheme != "tls" {
+	switch url.Scheme {
+	case "smtp":
+		break
+	case "smtps":
+		fallthrough
+	case "tls":
+		if tlsConfig != nil && tlsConfig.ServerName == "" {
+			tlsConfig.ServerName = url.Host
+		}
+	default:
 		return nil, ErrInvalidScheme
 	}
 
